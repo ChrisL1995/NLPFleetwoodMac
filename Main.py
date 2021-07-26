@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import glob
 from nltk.corpus import stopwords
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.decomposition import NMF
 
 lemmatizer = WordNetLemmatizer()
 path = 'C:/Users/User/Documents/Python Scripts/NLPFleetMacPython/NLPFleetwoodMac/'
@@ -27,7 +29,12 @@ def get_title(filepath):
 
 rawdata = {}
 for file in files:
-    rawdata[get_title(file)] = np.array(open(file,'r').readlines())
+    lines = open(file,'r').readlines()
+    for i in range(len(lines)):
+        if lines[i][-1] == "\n":
+            lines[i] = lines[i][:-1]
+            lines[i] += ' '
+    rawdata[get_title(file)] = np.array(lines)
     
 
 
@@ -47,8 +54,8 @@ lyricsplit = [splitdata[key] for key in splitdata]
 lyricsplit = np.sum(lyricsplit)
 
 # remove stopwords from wordlist
-
-wordlist = [word for word in list(dict.fromkeys(lyricsplit)) if not word in stopwords.words('english')+['']]
+otherstops = ["","oh","ooh","baby","wa","ah","yeah"]
+wordlist = [word for word in list(dict.fromkeys(lyricsplit)) if not word in stopwords.words('english')+otherstops]
 
 lyricfreq = {}
 for word in wordlist:
@@ -62,14 +69,43 @@ values = sort[:,1].astype(int)
 
 fig = plt.figure()
 ax = fig.add_subplot(111)
-ax.bar(keys[0:30],values[0:30])
+ax.bar(keys[0:50],values[0:50])
 plt.xticks(rotation=90)
+ax.set_xlabel('lyric')
+ax.set_ylabel('frequency')
 
-# Use bag-of-word analysis
 
-# Use n-gram analysis
+# Topic modeling to find topics
+# Use tf-idf
 
+def join_lyrics(lyrics):
+    test = ''
+    for line in lyrics:
+        test += line
+    return test
+
+
+# Get feature names from each song
+vectorizer = TfidfVectorizer(stop_words=(stopwords.words('english')+otherstops), min_df = 0.1)
+corpus = []
+for key in rawdata:
+    corpus.append(join_lyrics(rawdata[key]))
+
+# convert corpus to lower case
+for song in corpus:
+    song = song.lower()
+    
+
+tfidf_freq = vectorizer.fit_transform(corpus)
 # naive Bayes classifier to gauge mood?
 
+nmf = NMF(n_components=5, random_state=1).fit(tfidf_freq)
 
+feature_names = vectorizer.get_feature_names()
+
+for topic_idx, topic in enumerate(nmf.components_):
+    print("Topic #%d:" % topic_idx)
+    print(" ".join([feature_names[i]
+                    for i in topic.argsort()[:-10 - 1:-1]]))
+    print()
 
