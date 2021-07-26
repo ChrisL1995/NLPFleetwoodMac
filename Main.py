@@ -110,4 +110,59 @@ for topic_idx, topic in enumerate(nmf.components_):
     print()
 
 
+# How does the prevelance of the topics change over time?
 
+# Transform the copus to numeric values. (needed for the nmf transform but not too sure how this works exactly)
+transformed_corpus = vectorizer.transform(corpus)
+
+# Return the document-topic matrix (row = song, column = topic)
+
+dtm = nmf.transform(transformed_corpus)
+
+
+topics = ["Reminiscing","Being in Love","Desire","Philophobia","Passage of Time"]
+fig = plt.figure()
+ax = fig.add_subplot(111)
+for i in range(len(dtm[0])):    
+    ax.plot(dtm[:,i], label = topics[i])
+ax.legend()
+ax.set_xticks(np.arange(0,len(dtm)))
+ax.set_xlim(0,len(dtm)-1)
+ax.set_xticklabels(rawdata.keys())
+plt.xticks(rotation = 90)
+
+
+# Need to put songs into order.
+df = pd.DataFrame()
+df["Song Title"] = data["Song Title"]
+df["year"] = data["Song Year"]
+arr1 = []
+for song in df["Song Title"]:
+    song = song.replace("'","")
+    song = song.replace(" ", "")
+    arr1.append(song)
+df["Squish Title"] = arr1
+
+arr2 = []
+for song in df["Squish Title"]:
+    index = np.where(song == np.array(list(rawdata.keys())))[0][0]
+
+    
+    arr2.append(dtm[index])
+arr2 = np.array(arr2)
+for n, topic in enumerate(topics):
+    df[topic] = arr2[:,n]
+
+# now sort by data
+
+df = df.sort_values(by = ["year"])
+
+fig = plt.figure()
+plotdf = pd.DataFrame()
+for topic in topics:
+    plotdf[topic] = df[topic]
+plotdf.index =  df["Song Title"].values
+
+ax = plotdf.plot.bar(stacked=True, figsize=(30,23))
+fig = ax.get_figure()
+fig.savefig("/home/chris/Documents/PythonProjects/NLPFleetwoodMac/Figures/Topic_per_song2.png")
