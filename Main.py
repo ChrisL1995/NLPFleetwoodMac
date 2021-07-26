@@ -19,12 +19,12 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import NMF
 
 lemmatizer = WordNetLemmatizer()
-path = 'C:/Users/User/Documents/Python Scripts/NLPFleetMacPython/NLPFleetwoodMac/'
+path = "/home/chris/Documents/PythonProjects/NLPFleetwoodMac/"
 files = glob.glob(path + 'Lyrics/*.txt')
 data = pd.read_excel(path+'SinglesList.xlsx')
 
 def get_title(filepath):
-    title = filepath[80:-4]
+    title = filepath[60:-4]
     return title
 
 rawdata = {}
@@ -108,4 +108,6 @@ for topic_idx, topic in enumerate(nmf.components_):
     print(" ".join([feature_names[i]
                     for i in topic.argsort()[:-10 - 1:-1]]))
     print()
+
+
 
