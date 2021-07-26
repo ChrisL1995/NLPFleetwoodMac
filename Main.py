@@ -120,7 +120,7 @@ transformed_corpus = vectorizer.transform(corpus)
 dtm = nmf.transform(transformed_corpus)
 
 
-topics = ["Reminiscing","Being in Love","Desire","Philophobia","Passage of Time"]
+topics = np.array(["Reminiscing","Being in Love","Desire","Philophobia","Passage of Time"])
 fig = plt.figure()
 ax = fig.add_subplot(111)
 for i in range(len(dtm[0])):    
@@ -150,6 +150,11 @@ for song in df["Squish Title"]:
     
     arr2.append(dtm[index])
 arr2 = np.array(arr2)
+
+# convert to percentage:
+
+arr2 = arr2.T/np.sum(arr2,1)
+arr2 = arr2.T*100
 for n, topic in enumerate(topics):
     df[topic] = arr2[:,n]
 
@@ -165,4 +170,19 @@ plotdf.index =  df["Song Title"].values
 
 ax = plotdf.plot.bar(stacked=True, figsize=(30,23))
 fig = ax.get_figure()
-fig.savefig("/home/chris/Documents/PythonProjects/NLPFleetwoodMac/Figures/Topic_per_song2.png")
+
+
+# Create a similar plot but with only the nth popular topic
+
+topicnum = 0
+colours = ['blue','orange','green','red','purple']
+fig = plt.figure()
+fig.set_size_inches(30,23)
+ax = fig.add_subplot(111)
+for i in range(len(df["Song Title"])):
+    song_topic = df[topics].iloc[i].sort_values(ascending = False)
+    label = song_topic.keys()[0]
+    cind = np.where(label == topics)[0][0]
+    ax.bar(df['Song Title'].iloc[i], song_topic[topicnum]/song_topic[topicnum], label = song_topic.keys()[0], color=colours[cind])
+plt.xticks(rotation=90)
+
