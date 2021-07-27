@@ -19,13 +19,55 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import NMF
 
 lemmatizer = WordNetLemmatizer()
-path = "/home/chris/Documents/PythonProjects/NLPFleetwoodMac/"
+path = "C:/Users/User/Documents/Python Scripts/NLPFleetwoodMac/"
 files = glob.glob(path + 'Lyrics/*.txt')
 data = pd.read_excel(path+'SinglesList.xlsx')
 
 def get_title(filepath):
-    title = filepath[60:-4]
+    title = filepath[62:-4]
     return title
+
+def join_lyrics(lyrics):
+    test = ''
+    for line in lyrics:
+        test += line
+    return test
+
+
+# def feature_extraction(song_list,lyric_dataframe):
+    
+
+def bag_of_words(lyric_dataframe, extrastops = None):
+    
+    # First, split into seperate words
+    splitdata = {}
+    for key in rawdata:
+       splitdata[key] = np.concatenate([re.split(r'\W+',str(line)) for line in lyric_dataframe[key]])
+
+    # Lemmatize the words
+    for key in splitdata:
+        splitdata[key] = [lemmatizer.lemmatize(word.lower()) for word in splitdata[key]]
+    
+
+    # Get frequency of words from wordlist
+    lyricsplit = [splitdata[key] for key in splitdata]
+    lyricsplit = np.sum(lyricsplit)
+
+# remove stopwords from wordlist
+
+    wordlist = [word for word in list(dict.fromkeys(lyricsplit)) if not word in stopwords.words('english')+otherstops]
+
+    lyricfreq = {}
+    for word in wordlist:
+        lyricfreq[word] = lyricsplit.count(word)
+    
+    # Sort into descending order:
+        
+    sort = np.array(sorted(lyricfreq.items(), key = lambda x:x[1], reverse = True))
+    keys = sort[:,0]
+    values = sort[:,1].astype(int)
+
+    return keys, values
 
 rawdata = {}
 for file in files:
@@ -36,37 +78,9 @@ for file in files:
             lines[i] += ' '
     rawdata[get_title(file)] = np.array(lines)
     
-
-
-# First, split into seperate words
-splitdata = {}
-for key in rawdata:
-   splitdata[key] = np.concatenate([re.split(r'\W+',str(line)) for line in rawdata[key]])
-
-
-# Lemmatize the words
-for key in splitdata:
-    splitdata[key] = [lemmatizer.lemmatize(word.lower()) for word in splitdata[key]]
-
-
-# Get frequency of words from wordlist
-lyricsplit = [splitdata[key] for key in splitdata]
-lyricsplit = np.sum(lyricsplit)
-
-# remove stopwords from wordlist
 otherstops = ["","oh","ooh","baby","wa","ah","yeah"]
-wordlist = [word for word in list(dict.fromkeys(lyricsplit)) if not word in stopwords.words('english')+otherstops]
 
-lyricfreq = {}
-for word in wordlist:
-    lyricfreq[word] = lyricsplit.count(word)
-
-# Sort into descending order:
-    
-sort = np.array(sorted(lyricfreq.items(), key = lambda x:x[1], reverse = True))
-keys = sort[:,0]
-values = sort[:,1].astype(int)
-
+keys, values = bag_of_words(rawdata, otherstops)
 fig = plt.figure()
 ax = fig.add_subplot(111)
 ax.bar(keys[0:50],values[0:50])
@@ -77,12 +91,6 @@ ax.set_ylabel('frequency')
 
 # Topic modeling to find topics
 # Use tf-idf
-
-def join_lyrics(lyrics):
-    test = ''
-    for line in lyrics:
-        test += line
-    return test
 
 
 # Get feature names from each song
@@ -161,21 +169,21 @@ for n, topic in enumerate(topics):
 # now sort by data
 
 df = df.sort_values(by = ["year"])
-
+colors = ["black","brown","red","orange","yellow"]
 fig = plt.figure()
 plotdf = pd.DataFrame()
 for topic in topics:
     plotdf[topic] = df[topic]
 plotdf.index =  df["Song Title"].values
 
-ax = plotdf.plot.bar(stacked=True, figsize=(30,23))
+ax = plotdf.plot.bar(stacked=True, figsize=(30,23), color = colors)
 fig = ax.get_figure()
+fig.savefig("C:/Users/User/Documents/Python Scripts/NLPFleetwoodMac/Figures/Topic_per_song_percent.png")
 
 
 # Create a similar plot but with only the nth popular topic
 
 topicnum = 0
-colours = ['blue','orange','green','red','purple']
 fig = plt.figure()
 fig.set_size_inches(30,23)
 ax = fig.add_subplot(111)
@@ -183,6 +191,7 @@ for i in range(len(df["Song Title"])):
     song_topic = df[topics].iloc[i].sort_values(ascending = False)
     label = song_topic.keys()[0]
     cind = np.where(label == topics)[0][0]
-    ax.bar(df['Song Title'].iloc[i], song_topic[topicnum]/song_topic[topicnum], label = song_topic.keys()[0], color=colours[cind])
+    ax.bar(df['Song Title'].iloc[i], song_topic[topicnum]/song_topic[topicnum], label = song_topic.keys()[0], color=colors[cind])
 plt.xticks(rotation=90)
+fig.savefig("C:/Users/User/Documents/Python Scripts/NLPFleetwoodMac/Figures/Topic_0_song.png")
 
